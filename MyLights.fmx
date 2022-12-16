@@ -4,17 +4,18 @@ object HeaderFooterForm: THeaderFooterForm
   BorderStyle = None
   Caption = 'SliLights'
   ClientHeight = 676
-  ClientWidth = 340
+  ClientWidth = 336
   FormFactor.Width = 1440
   FormFactor.Height = 900
   FormFactor.Devices = [Desktop]
   OnCreate = FormCreate
+  OnSaveState = FormSaveState
   DesignerMasterStyle = 0
   object Footer: TToolBar
     Align = Bottom
-    Position.Y = 628.000000000000000000
-    Size.Width = 340.000000000000000000
-    Size.Height = 48.000000000000000000
+    Position.Y = 632.000000000000000000
+    Size.Width = 336.000000000000000000
+    Size.Height = 44.000000000000000000
     Size.PlatformDefault = False
     StyleLookup = 'bottomtoolbar'
     TabOrder = 1
@@ -387,13 +388,13 @@ object HeaderFooterForm: THeaderFooterForm
     OnClick = btnRestartClick
   end
   object Header: TToolBar
-    Size.Width = 340.000000000000000000
+    Size.Width = 336.000000000000000000
     Size.Height = 48.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
     object HeaderLabel: TLabel
       Align = Contents
-      Size.Width = 340.000000000000000000
+      Size.Width = 336.000000000000000000
       Size.Height = 48.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = 'toollabel'
@@ -434,13 +435,13 @@ object HeaderFooterForm: THeaderFooterForm
     Size.PlatformDefault = False
     TabOrder = 31
     TouchTargetExpansion.Bottom = 2.000000000000000000
-    Value = 1.000000000000000000
+    Value = 6.000000000000000000
     OnChange = trbarRandomChange
   end
   object lblRandom: TLabel
     Position.X = 89.000000000000000000
     Position.Y = 489.000000000000000000
-    Size.Width = 156.000000000000000000
+    Size.Width = 239.000000000000000000
     Size.Height = 25.000000000000000000
     Size.PlatformDefault = False
     Text = 'Random click(s):'

@@ -4,9 +4,10 @@ interface
 
 uses
   System.SysUtils, System.Classes, FMX.Types, FMX.Controls.Presentation,
-  FMX.Objects, FMX.StdCtrls, FMX.Forms, FMX.Controls;
+  FMX.Objects, FMX.StdCtrls, FMX.Forms, FMX.Controls, System.IOUtils;
+// System.IOUtils is needed for GetPathHome
 
-  type
+type
   THeaderFooterForm = class(TForm)
     Header: TToolBar;
     Footer: TToolBar;
@@ -18,7 +19,7 @@ uses
     lblRandom: TLabel;
     trbarRandom: TTrackBar;
     btnExit: TButton;
-    //Rectangle clicks
+    // Rectangle clicks
     Rectangle1: TRectangle;
     Rectangle2: TRectangle;
     Rectangle3: TRectangle;
@@ -44,20 +45,24 @@ uses
     Rectangle23: TRectangle;
     Rectangle24: TRectangle;
     Rectangle25: TRectangle;
-    //*********
+    // *********
     procedure CheckWin;
     procedure ClearAll;
     procedure RestartLevel;
     procedure Invert(Index: Integer);
     procedure Press(Index: Integer);
     procedure UserPress(Index: Integer);
+    // Form
     procedure FormCreate(Sender: TObject);
+    procedure FormSaveState(Sender: TObject);
+    procedure LayControls;
+    // Controls
     procedure btnRestartClick(Sender: TObject);
     procedure trbarLevelChange(Sender: TObject);
     procedure btnRandomClick(Sender: TObject);
     procedure trbarRandomChange(Sender: TObject);
     procedure btnExitClick(Sender: TObject);
-    //Rectangle clicks
+    // Rectangle clicks
     procedure Rectangle1Click(Sender: TObject);
     procedure Rectangle2Click(Sender: TObject);
     procedure Rectangle3Click(Sender: TObject);
@@ -83,7 +88,7 @@ uses
     procedure Rectangle23Click(Sender: TObject);
     procedure Rectangle24Click(Sender: TObject);
     procedure Rectangle25Click(Sender: TObject);
-    //*********
+    // *********
   private
     { Private declarations }
   public
@@ -91,27 +96,54 @@ uses
   end;
 
 type
-  Level = array[0..4] of Integer;
-  Levels = array[0..99] of Level;
+  Level = array [0 .. 4] of Integer;
+  Levels = array [0 .. 99] of Level;
 
 var
   HeaderFooterForm: THeaderFooterForm;
-  Lights: array[0..24] of Boolean;
+  Lights: array [0 .. 24] of Boolean;
   WinGame, IsRandom: Boolean;
   Clicks, RandomDefault, CurrentLevel: Integer;
   ColourOn, ColourOff: Int64;
 
 const
-  TheseLevels: Levels = ((0, 0, 21, 0, 0), (21, 21, 0, 21, 21), (10, 27, 27, 27, 10), (0, 27, 0, 17, 27), (15, 23, 23, 24, 27), (0, 0, 21, 21, 14), (15, 17, 17, 17, 15), (0, 4, 10, 21, 10), (10, 31, 14, 26, 7), (14, 14, 14, 0, 0), (21, 21, 21, 21, 14), (31, 10, 27, 14, 10), (8, 20, 10, 5, 2), (0, 0, 2, 2, 2), (0, 2, 0, 2, 0), (1, 1, 1, 1, 31), (0, 0, 4, 14, 31), (4, 10, 21, 10, 4), (21, 0, 21, 0, 21), (0, 0, 17, 0, 0), (30, 2, 14, 2, 2), (14, 17, 17, 17, 14), (0, 0, 28, 12, 4), (0, 0, 17, 31, 18), (1, 3, 7,
-    15, 30), (17, 17, 31, 17, 17), (4, 14, 4, 4, 4), (0, 0, 28, 28, 28), (0, 2, 0, 0, 0), (0, 0, 4, 0, 0), (17, 19, 21, 25, 17), (31, 8, 4, 2, 31), (8, 8, 21, 17, 25), (20, 17, 17, 22, 30), (24, 10, 17, 21, 0), (4, 10, 17, 31, 17), (0, 14, 14, 14, 0), (21, 10, 21, 10, 21), (10, 1, 3, 12, 10), (0, 0, 10, 0, 0), (17, 10, 4, 4, 4), (7, 9, 7, 9, 7), (17, 11, 7, 2, 14), (0, 27, 31, 4, 14), (14, 5, 28, 15, 21), (4, 14, 31, 14, 4), (4, 31, 5, 18, 16), (0, 17, 4, 17, 0), (17, 10, 4, 10, 17), (31, 31, 31, 31, 31), (27,
-    0, 27, 0, 27), (31, 4, 0, 4, 31), (31, 10, 4, 10, 31), (10, 17, 0, 27, 17), (4, 6, 27, 12, 4), (10, 31, 21, 31, 10), (21, 17, 27, 17, 21), (0, 0, 14, 2, 0), (16, 8, 4, 6, 5), (0, 21, 17, 21, 17), (31, 14, 14, 14, 31), (17, 10, 0, 10, 17), (14, 10, 14, 8, 14), (15, 9, 15, 7, 9), (21, 21, 21, 21, 14), (14, 2, 14, 8, 14), (31, 17, 21, 17, 31), (21, 0, 21, 0, 21), (10, 21, 14, 21, 10), (21, 0, 0, 0, 21), (31, 29, 27, 23, 31), (31, 4, 31, 17, 17), (27, 10, 27, 10, 27), (4, 10, 31, 17, 31), (17, 27, 21, 17,
-    17), (31, 21, 31, 21, 31), (14, 4, 4, 4, 14), (14, 10, 31, 14, 27), (0, 0, 4, 0, 0), (17, 0, 4, 0, 17), (27, 27, 0, 27, 27), (10, 0, 17, 14, 4), (21, 14, 27, 14, 21), (17, 19, 21, 25, 17), (21, 21, 27, 21, 21), (4, 4, 14, 21, 21), (21, 21, 21, 21, 31), (0, 14, 14, 14, 0), (4, 10, 17, 31, 17), (21, 10, 21, 10, 21), (17, 14, 10, 14, 17), (4, 10, 17, 10, 4), (21, 0, 10, 0, 21), (10, 31, 10, 31, 10), (31, 21, 31, 29, 31), (17, 10, 4, 10, 17), (31, 4, 31, 4, 31), (31, 14, 4, 14, 31), (4, 21, 31, 21, 4), (31, 31, 31, 31, 31));
+  TheseLevels: Levels = ((0, 0, 21, 0, 0), (21, 21, 0, 21, 21),
+    (10, 27, 27, 27, 10), (0, 27, 0, 17, 27), (15, 23, 23, 24, 27),
+    (0, 0, 21, 21, 14), (15, 17, 17, 17, 15), (0, 4, 10, 21, 10),
+    (10, 31, 14, 26, 7), (14, 14, 14, 0, 0), (21, 21, 21, 21, 14),
+    (31, 10, 27, 14, 10), (8, 20, 10, 5, 2), (0, 0, 2, 2, 2), (0, 2, 0, 2, 0),
+    (1, 1, 1, 1, 31), (0, 0, 4, 14, 31), (4, 10, 21, 10, 4), (21, 0, 21, 0, 21),
+    (0, 0, 17, 0, 0), (30, 2, 14, 2, 2), (14, 17, 17, 17, 14),
+    (0, 0, 28, 12, 4), (0, 0, 17, 31, 18), (1, 3, 7, 15, 30),
+    (17, 17, 31, 17, 17), (4, 14, 4, 4, 4), (0, 0, 28, 28, 28), (0, 2, 0, 0, 0),
+    (0, 0, 4, 0, 0), (17, 19, 21, 25, 17), (31, 8, 4, 2, 31),
+    (8, 8, 21, 17, 25), (20, 17, 17, 22, 30), (24, 10, 17, 21, 0),
+    (4, 10, 17, 31, 17), (0, 14, 14, 14, 0), (21, 10, 21, 10, 21),
+    (10, 1, 3, 12, 10), (0, 0, 10, 0, 0), (17, 10, 4, 4, 4), (7, 9, 7, 9, 7),
+    (17, 11, 7, 2, 14), (0, 27, 31, 4, 14), (14, 5, 28, 15, 21),
+    (4, 14, 31, 14, 4), (4, 31, 5, 18, 16), (0, 17, 4, 17, 0),
+    (17, 10, 4, 10, 17), (31, 31, 31, 31, 31), (27, 0, 27, 0, 27),
+    (31, 4, 0, 4, 31), (31, 10, 4, 10, 31), (10, 17, 0, 27, 17),
+    (4, 6, 27, 12, 4), (10, 31, 21, 31, 10), (21, 17, 27, 17, 21),
+    (0, 0, 14, 2, 0), (16, 8, 4, 6, 5), (0, 21, 17, 21, 17),
+    (31, 14, 14, 14, 31), (17, 10, 0, 10, 17), (14, 10, 14, 8, 14),
+    (15, 9, 15, 7, 9), (21, 21, 21, 21, 14), (14, 2, 14, 8, 14),
+    (31, 17, 21, 17, 31), (21, 0, 21, 0, 21), (10, 21, 14, 21, 10),
+    (21, 0, 0, 0, 21), (31, 29, 27, 23, 31), (31, 4, 31, 17, 17),
+    (27, 10, 27, 10, 27), (4, 10, 31, 17, 31), (17, 27, 21, 17, 17),
+    (31, 21, 31, 21, 31), (14, 4, 4, 4, 14), (14, 10, 31, 14, 27),
+    (0, 0, 4, 0, 0), (17, 0, 4, 0, 17), (27, 27, 0, 27, 27), (10, 0, 17, 14, 4),
+    (21, 14, 27, 14, 21), (17, 19, 21, 25, 17), (21, 21, 27, 21, 21),
+    (4, 4, 14, 21, 21), (21, 21, 21, 21, 31), (0, 14, 14, 14, 0),
+    (4, 10, 17, 31, 17), (21, 10, 21, 10, 21), (17, 14, 10, 14, 17),
+    (4, 10, 17, 10, 4), (21, 0, 10, 0, 21), (10, 31, 10, 31, 10),
+    (31, 21, 31, 29, 31), (17, 10, 4, 10, 17), (31, 4, 31, 4, 31),
+    (31, 14, 4, 14, 31), (4, 21, 31, 21, 4), (31, 31, 31, 31, 31));
 
 implementation
 
 {$R *.fmx}
-
-//Game
+// Game
 
 procedure THeaderFooterForm.CheckWin;
 var
@@ -120,26 +152,27 @@ begin
   WinGame := True;
   for i := 0 to 24 do
     if Lights[i] then
-      begin
-        WinGame := False;
-        Break;
-      end;
+    begin
+      WinGame := False;
+      Break;
+    end;
   Inc(Clicks);
-  if isRandom then
+  if IsRandom then
     HeaderLabel.Text := 'Random level, Click(s): ' + IntToStr(Clicks)
   else
-    HeaderLabel.Text := 'Level: ' + IntToStr(CurrentLevel) + ', Click(s): ' + IntToStr(Clicks);
+    HeaderLabel.Text := 'Level: ' + IntToStr(CurrentLevel) + ', Click(s): ' +
+      IntToStr(Clicks);
   if WinGame then
   begin
     if IsRandom then
       RestartLevel()
     else
-      begin
-        if CurrentLevel < 100 then
-          inc(CurrentLevel);
-        trbarLevel.Value := CurrentLevel;
-        RestartLevel();
-      end;
+    begin
+      if CurrentLevel < 100 then
+        Inc(CurrentLevel);
+      trbarLevel.Value := CurrentLevel;
+      RestartLevel();
+    end;
   end;
 end;
 
@@ -183,14 +216,14 @@ begin
   i := 0;
   for component in HeaderFooterForm do
     if (component is TRectangle) then
+    begin
+      if (Index = i) then
       begin
-        if (Index = i) then
-          begin
-            TRectangle(component).Fill.Color := LightColour;
-            Break;
-          end;
-        Inc(i);
+        TRectangle(component).Fill.Color := LightColour;
+        Break;
       end;
+      Inc(i);
+    end;
 end;
 
 procedure THeaderFooterForm.Press(Index: Integer);
@@ -212,19 +245,93 @@ begin
   CheckWin;
 end;
 
-//Form
+// Form
 
 procedure THeaderFooterForm.FormCreate(Sender: TObject);
+var
+  R: TBinaryReader;
 begin
+  SaveState.StoragePath := TPath.GetHomePath;
+  if SaveState.Stream.Size > 0 then
+  begin
+    R := TBinaryReader.Create(SaveState.Stream);
+    try
+      trbarLevel.Value := R.ReadSingle;
+      trbarRandom.Value := R.ReadSingle;
+    finally
+      R.Free;
+    end;
+  end;
   ColourOn := $FFE761DD;
   ColourOff := $FF670A71;
   CurrentLevel := Round(trbarLevel.Value);
   RandomDefault := Round(trbarRandom.Value);
+  LayControls;
+  lblLevel.Text := 'Level: ' + IntToStr(CurrentLevel);
   lblRandom.Text := 'Random click(s): ' + IntToStr(RandomDefault);
   RestartLevel();
 end;
 
-//Controls
+procedure THeaderFooterForm.FormSaveState(Sender: TObject);
+var
+  W: TBinaryWriter;
+begin
+  SaveState.Stream.Clear;
+  W := TBinaryWriter.Create(SaveState.Stream);
+  try
+    W.Write(trbarLevel.Value);
+    W.Write(trbarRandom.Value);
+  finally
+    W.Free;
+  end;
+end;
+
+procedure THeaderFooterForm.LayControls;
+var
+  X: Single;
+  BoxSize, i, Spacing: Integer;
+  component: TComponent;
+begin
+  Spacing := 10;
+  // Size and place rectangles
+  X := HeaderFooterForm.Width;
+  BoxSize := Round(X / 5 - 0.5);
+  i := 0;
+  for component in HeaderFooterForm do
+    if (component is TRectangle) then
+    begin
+      TRectangle(component).Size.Height := BoxSize;
+      TRectangle(component).Size.Width := BoxSize;
+      TRectangle(component).Position.X := BoxSize * (i mod 5);
+      TRectangle(component).Position.Y := BoxSize * (i div 5) + Header.Height;
+      Inc(i);
+    end;
+  // Size and place other Controls
+  btnRestart.Position.X := Spacing;
+  btnRestart.Position.Y := 5 * BoxSize + Header.Size.Height + Spacing;
+  btnRandom.Position.X := Spacing;
+  btnRandom.Position.Y := btnRestart.Position.Y + btnRestart.Size.Height
+    + Spacing;
+  btnExit.Position.X := Spacing;
+  btnExit.Position.Y := btnRandom.Position.Y + btnRandom.Size.Height + Spacing;
+  lblLevel.Position.X := btnRestart.Position.X + btnRestart.Size.Width
+    + Spacing;
+  lblLevel.Position.Y := btnRestart.Position.Y;
+  trbarLevel.Position.X := lblLevel.Position.X;
+  trbarLevel.Position.Y := lblLevel.Position.Y + lblLevel.Size.Height +
+    Spacing / 2;
+  trbarLevel.Width := X - trbarLevel.Position.X;
+  lblLevel.Width := trbarLevel.Width;
+  lblRandom.Position.X := btnRandom.Position.X + btnRandom.Size.Width + Spacing;
+  lblRandom.Position.Y := btnRandom.Position.Y;
+  trbarRandom.Position.X := lblRandom.Position.X;
+  trbarRandom.Position.Y := lblRandom.Position.Y + lblRandom.Size.Height +
+    Spacing / 2;
+  trbarRandom.Width := X - trbarRandom.Position.X;
+  lblRandom.Width := trbarRandom.Width;
+end;
+
+// Controls
 
 procedure THeaderFooterForm.btnRestartClick(Sender: TObject);
 begin
@@ -260,11 +367,11 @@ begin
   lblLevel.Text := 'Level: ' + IntToStr(CurrentLevel);
 end;
 
-//Rectangle clicks
+// Rectangle clicks
 
 procedure THeaderFooterForm.Rectangle1Click(Sender: TObject);
 begin
-UserPress(0);
+  UserPress(0);
 end;
 
 procedure THeaderFooterForm.Rectangle2Click(Sender: TObject);
